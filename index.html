@@ -1,335 +1,530 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Morning Brief">
-<meta name="theme-color" content="#0f0f0f">
-<title>Morning Brief</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --ink: #0f0f0f;
-  --cream: #f5f0e8;
-  --warm-mid: #8a7f6e;
-  --gold: #b8975a;
-  --gold-light: #d4b07a;
-  --surface: #faf7f2;
-  --border: #e2d9cc;
-  --serif: 'Cormorant Garamond', Georgia, serif;
-  --sans: 'DM Sans', system-ui, sans-serif;
-}
-html, body { height: 100%; background: var(--cream); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
-body { min-height: 100vh; min-height: -webkit-fill-available; display: flex; flex-direction: column; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f0f0f">
+  <title>Morning Brief</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #0f0f0f;
+      --cream: #f5f0e8;
+      --warm-mid: #8a7f6e;
+      --gold: #b8975a;
+      --gold-light: #d4b07a;
+      --surface: #faf7f2;
+      --border: #e2d9cc;
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'DM Sans', system-ui, sans-serif;
+    }
+    html, body { height: 100%; background: var(--cream); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+    body { min-height: 100vh; min-height: -webkit-fill-available; display: flex; flex-direction: column; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 
-.screen { display: none; flex-direction: column; min-height: 100vh; padding: 48px 32px 40px; animation: fadeUp 0.5s ease both; }
-.screen.active { display: flex; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .screen { display: none; flex-direction: column; min-height: 100vh; padding: 48px 32px 40px; animation: fadeUp 0.5s ease both; }
+    .screen.active { display: flex; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
-/* MORNING VIEW */
-#view { background: var(--ink); color: var(--cream); justify-content: space-between; }
-.greeting { font-family: var(--serif); font-size: clamp(13px, 3.5vw, 15px); font-weight: 300; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
-.today-date { font-family: var(--serif); font-size: clamp(36px, 10vw, 52px); font-weight: 300; line-height: 1.1; color: var(--cream); }
-.today-date em { font-style: italic; color: var(--gold-light); }
-.divider { width: 40px; height: 1px; background: var(--gold); margin: 28px 0; opacity: 0.6; }
-.section-label { font-family: var(--sans); font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--warm-mid); margin-bottom: 20px; }
-.priorities-list { list-style: none; display: flex; flex-direction: column; }
+    /* LOADING STATE */
+    .loading-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--ink); }
+    .loading-screen.hidden { display: none; }
+    .loading-text { font-family: var(--serif); font-size: 18px; color: var(--gold); font-style: italic; }
 
-.priority-item { display: flex; flex-direction: column; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.07); animation: slideIn 0.4s ease both; transition: opacity 0.2s; }
-.priority-item:last-child { border-bottom: none; }
-.priority-item.done { opacity: 0.35; }
-.priority-item.done .priority-text { text-decoration: line-through; }
-@keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
-.priority-item:nth-child(1) { animation-delay: 0.1s; }
-.priority-item:nth-child(2) { animation-delay: 0.2s; }
-.priority-item:nth-child(3) { animation-delay: 0.3s; }
-.priority-item:nth-child(4) { animation-delay: 0.4s; }
-.priority-item:nth-child(5) { animation-delay: 0.5s; }
+    /* LOGIN VIEW */
+    #login { background: var(--ink); color: var(--cream); justify-content: center; align-items: center; text-align: center; }
+    .login-title { font-family: var(--serif); font-size: clamp(32px, 8vw, 42px); font-weight: 300; margin-bottom: 8px; }
+    .login-subtitle { font-size: 14px; color: var(--warm-mid); margin-bottom: 32px; }
+    .login-form { width: 100%; max-width: 280px; display: flex; flex-direction: column; gap: 12px; }
+    .login-input { width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; font-family: var(--sans); font-size: 15px; color: var(--cream); outline: none; }
+    .login-input::placeholder { color: var(--warm-mid); }
+    .login-input:focus { border-color: var(--gold); }
+    .login-btn { padding: 14px; background: var(--gold); color: var(--ink); border: none; border-radius: 4px; font-family: var(--sans); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; }
+    .login-btn:hover { background: var(--gold-light); }
+    .login-note { font-size: 11px; color: var(--warm-mid); margin-top: 16px; line-height: 1.5; }
+    .sync-status { position: fixed; top: 16px; right: 16px; font-size: 11px; color: var(--gold); opacity: 0; transition: opacity 0.3s; }
+    .sync-status.visible { opacity: 1; }
 
-.priority-main { display: flex; align-items: flex-start; gap: 16px; cursor: pointer; }
-.priority-num { font-family: var(--serif); font-size: 22px; font-weight: 300; font-style: italic; color: var(--gold); min-width: 28px; line-height: 1.4; flex-shrink: 0; }
-.priority-text { font-family: var(--serif); font-size: clamp(18px, 4.5vw, 22px); font-weight: 300; line-height: 1.45; color: var(--cream); flex: 1; }
-.check-icon { width: 20px; height: 20px; border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; flex-shrink: 0; margin-top: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, border-color 0.2s; }
-.priority-item.done .check-icon { background: var(--gold); border-color: var(--gold); }
-.check-icon svg { opacity: 0; transition: opacity 0.2s; }
-.priority-item.done .check-icon svg { opacity: 1; }
+    /* MORNING VIEW */
+    #view { background: var(--ink); color: var(--cream); justify-content: space-between; }
+    .greeting { font-family: var(--serif); font-size: clamp(13px, 3.5vw, 15px); font-weight: 300; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+    .today-date { font-family: var(--serif); font-size: clamp(36px, 10vw, 52px); font-weight: 300; line-height: 1.1; color: var(--cream); }
+    .today-date em { font-style: italic; color: var(--gold-light); }
+    .divider { width: 40px; height: 1px; background: var(--gold); margin: 28px 0; opacity: 0.6; }
+    .section-label { font-family: var(--sans); font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--warm-mid); margin-bottom: 20px; }
+    .priorities-list { list-style: none; display: flex; flex-direction: column; }
 
-/* LINK CHIPS */
-.priority-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding-left: 44px; }
-.link-chip { display: inline-flex; align-items: center; gap: 5px; background: rgba(184,151,90,0.12); border: 1px solid rgba(184,151,90,0.28); color: var(--gold-light); font-family: var(--sans); font-size: 11px; font-weight: 400; letter-spacing: 0.04em; padding: 5px 10px; border-radius: 2px; text-decoration: none; transition: background 0.2s; }
-.link-chip:hover { background: rgba(184,151,90,0.22); }
-.link-chip svg { flex-shrink: 0; }
+    .priority-item { display: flex; flex-direction: column; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.07); animation: slideIn 0.4s ease both; transition: opacity 0.2s; }
+    .priority-item:last-child { border-bottom: none; }
+    .priority-item.done { opacity: 0.35; }
+    .priority-item.done .priority-text { text-decoration: line-through; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+    .priority-item:nth-child(1) { animation-delay: 0.1s; }
+    .priority-item:nth-child(2) { animation-delay: 0.2s; }
+    .priority-item:nth-child(3) { animation-delay: 0.3s; }
+    .priority-item:nth-child(4) { animation-delay: 0.4s; }
+    .priority-item:nth-child(5) { animation-delay: 0.5s; }
 
-.empty-state { font-family: var(--serif); font-size: 20px; font-weight: 300; font-style: italic; color: rgba(245,240,232,0.25); line-height: 1.6; padding: 24px 0; }
-.view-bottom { padding-top: 32px; }
-.progress-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-.progress-bar-track { flex: 1; height: 1px; background: rgba(255,255,255,0.1); position: relative; }
-.progress-bar-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--gold); transition: width 0.4s ease; }
-.progress-count { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; color: var(--warm-mid); }
-.btn-edit { display: inline-flex; align-items: center; gap: 8px; background: none; border: 1px solid rgba(255,255,255,0.15); color: rgba(245,240,232,0.6); font-family: var(--sans); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 18px; border-radius: 2px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
-.btn-edit:hover { border-color: rgba(184,151,90,0.5); color: var(--gold-light); }
-.daily-quote { margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); }
-.daily-quote p { font-family: var(--serif); font-size: 13px; font-style: italic; font-weight: 300; color: rgba(245,240,232,0.3); line-height: 1.6; }
+    .priority-main { display: flex; align-items: flex-start; gap: 16px; cursor: pointer; }
+    .priority-num { font-family: var(--serif); font-size: 22px; font-weight: 300; font-style: italic; color: var(--gold); min-width: 28px; line-height: 1.4; flex-shrink: 0; }
+    .priority-text { font-family: var(--serif); font-size: clamp(18px, 4.5vw, 22px); font-weight: 300; line-height: 1.45; color: var(--cream); flex: 1; }
+    .check-icon { width: 20px; height: 20px; border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; flex-shrink: 0; margin-top: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, border-color 0.2s; }
+    .priority-item.done .check-icon { background: var(--gold); border-color: var(--gold); }
+    .check-icon svg { opacity: 0; transition: opacity 0.2s; }
+    .priority-item.done .check-icon svg { opacity: 1; }
 
-/* EDIT VIEW */
-#edit { background: var(--surface); color: var(--ink); overflow-y: auto; }
-.edit-header { margin-bottom: 28px; }
-.edit-eyebrow { font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
-.edit-title { font-family: var(--serif); font-size: clamp(28px, 7vw, 38px); font-weight: 300; line-height: 1.2; color: var(--ink); }
-.edit-subtitle { font-size: 13px; color: var(--warm-mid); margin-top: 6px; font-weight: 300; line-height: 1.5; }
-.inputs-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
+    /* LINK CHIPS */
+    .priority-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding-left: 44px; }
+    .link-chip { display: inline-flex; align-items: center; gap: 5px; background: rgba(184,151,90,0.12); border: 1px solid rgba(184,151,90,0.28); color: var(--gold-light); font-family: var(--sans); font-size: 11px; font-weight: 400; letter-spacing: 0.04em; padding: 5px 10px; border-radius: 2px; text-decoration: none; transition: background 0.2s; }
+    .link-chip:hover { background: rgba(184,151,90,0.22); }
+    .link-chip svg { flex-shrink: 0; }
 
-.edit-card { background: white; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; transition: border-color 0.2s; }
-.edit-card:focus-within { border-color: var(--gold); }
-.edit-card-top { display: flex; align-items: center; gap: 14px; padding: 0 16px; }
-.input-num { font-family: var(--serif); font-size: 20px; font-style: italic; font-weight: 300; color: var(--gold); min-width: 20px; flex-shrink: 0; }
-.priority-input { flex: 1; border: none; outline: none; background: transparent; font-family: var(--serif); font-size: 17px; font-weight: 300; color: var(--ink); padding: 14px 0; line-height: 1.4; }
-.priority-input::placeholder { color: var(--border); font-style: italic; }
-.clear-input { background: none; border: none; cursor: pointer; color: var(--border); padding: 4px; transition: color 0.2s; flex-shrink: 0; display: flex; align-items: center; }
-.clear-input:hover { color: var(--warm-mid); }
+    .empty-state { font-family: var(--serif); font-size: 20px; font-weight: 300; font-style: italic; color: rgba(245,240,232,0.25); line-height: 1.6; padding: 24px 0; }
+    .view-bottom { padding-top: 32px; }
+    .progress-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .progress-bar-track { flex: 1; height: 1px; background: rgba(255,255,255,0.1); position: relative; }
+    .progress-bar-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--gold); transition: width 0.4s ease; }
+    .progress-count { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; color: var(--warm-mid); }
+    .btn-edit { display: inline-flex; align-items: center; gap: 8px; background: none; border: 1px solid rgba(255,255,255,0.15); color: rgba(245,240,232,0.6); font-family: var(--sans); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 18px; border-radius: 2px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+    .btn-edit:hover { border-color: rgba(184,151,90,0.5); color: var(--gold-light); }
+    .btn-logout { margin-left: 12px; background: none; border: 1px solid rgba(255,255,255,0.1); color: var(--warm-mid); font-family: var(--sans); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 14px; border-radius: 2px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+    .btn-logout:hover { border-color: rgba(255,255,255,0.2); color: var(--cream); }
+    .daily-quote { margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .daily-quote p { font-family: var(--serif); font-size: 13px; font-style: italic; font-weight: 300; color: rgba(245,240,232,0.3); line-height: 1.6; }
 
-.edit-links { border-top: 1px solid #f0ebe2; padding: 10px 16px 12px; background: #fdfaf6; }
-.edit-links-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
-.link-row { display: flex; align-items: center; gap: 6px; }
-.link-input-label { width: 110px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 3px; padding: 7px 8px; font-family: var(--sans); font-size: 11px; color: var(--ink); outline: none; background: white; }
-.link-input-url { flex: 1; border: 1px solid var(--border); border-radius: 3px; padding: 7px 8px; font-family: var(--sans); font-size: 11px; color: var(--ink); outline: none; background: white; min-width: 0; }
-.link-input-label:focus, .link-input-url:focus { border-color: var(--gold); }
-.link-input-label::placeholder, .link-input-url::placeholder { color: #d0c8bc; }
-.remove-link { background: none; border: none; cursor: pointer; color: var(--border); padding: 4px; display: flex; align-items: center; flex-shrink: 0; transition: color 0.2s; }
-.remove-link:hover { color: #8b3a3a; }
-.add-link-btn { display: inline-flex; align-items: center; gap: 5px; background: none; border: 1px dashed var(--border); color: var(--warm-mid); font-family: var(--sans); font-size: 11px; letter-spacing: 0.06em; padding: 5px 10px; border-radius: 3px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
-.add-link-btn:hover { border-color: var(--gold); color: var(--gold); }
+    /* EDIT VIEW */
+    #edit { background: var(--surface); color: var(--ink); overflow-y: auto; }
+    .edit-header { margin-bottom: 28px; }
+    .edit-eyebrow { font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .edit-title { font-family: var(--serif); font-size: clamp(28px, 7vw, 38px); font-weight: 300; line-height: 1.2; color: var(--ink); }
+    .edit-subtitle { font-size: 13px; color: var(--warm-mid); margin-top: 6px; font-weight: 300; line-height: 1.5; }
+    .inputs-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
 
-.edit-actions { display: flex; flex-direction: column; gap: 10px; }
-.btn-save { width: 100%; padding: 16px; background: var(--ink); color: var(--cream); border: none; border-radius: 4px; font-family: var(--sans); font-size: 13px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; }
-.btn-save:hover { background: #2a2a2a; }
-.btn-cancel { width: 100%; padding: 14px; background: none; color: var(--warm-mid); border: none; font-family: var(--sans); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: color 0.2s; }
-.btn-cancel:hover { color: var(--ink); }
-.edit-footer { margin-top: 16px; padding-bottom: 8px; font-size: 11px; color: var(--border); text-align: center; letter-spacing: 0.05em; }
-</style>
+    .edit-card { background: white; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; transition: border-color 0.2s; }
+    .edit-card:focus-within { border-color: var(--gold); }
+    .edit-card-top { display: flex; align-items: center; gap: 14px; padding: 0 16px; }
+    .input-num { font-family: var(--serif); font-size: 20px; font-style: italic; font-weight: 300; color: var(--gold); min-width: 20px; flex-shrink: 0; }
+    .priority-input { flex: 1; border: none; outline: none; background: transparent; font-family: var(--serif); font-size: 17px; font-weight: 300; color: var(--ink); padding: 14px 0; line-height: 1.4; }
+    .priority-input::placeholder { color: var(--border); font-style: italic; }
+    .clear-input { background: none; border: none; cursor: pointer; color: var(--border); padding: 4px; transition: color 0.2s; flex-shrink: 0; display: flex; align-items: center; }
+    .clear-input:hover { color: var(--warm-mid); }
+
+    .edit-links { border-top: 1px solid #f0ebe2; padding: 10px 16px 12px; background: #fdfaf6; }
+    .edit-links-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+    .link-row { display: flex; align-items: center; gap: 6px; }
+    .link-input-label { width: 110px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 3px; padding: 7px 8px; font-family: var(--sans); font-size: 11px; color: var(--ink); outline: none; background: white; }
+    .link-input-url { flex: 1; border: 1px solid var(--border); border-radius: 3px; padding: 7px 8px; font-family: var(--sans); font-size: 11px; color: var(--ink); outline: none; background: white; min-width: 0; }
+    .link-input-label:focus, .link-input-url:focus { border-color: var(--gold); }
+    .link-input-label::placeholder, .link-input-url::placeholder { color: #d0c8bc; }
+    .remove-link { background: none; border: none; cursor: pointer; color: var(--border); padding: 4px; display: flex; align-items: center; flex-shrink: 0; transition: color 0.2s; }
+    .remove-link:hover { color: #8b3a3a; }
+    .add-link-btn { display: inline-flex; align-items: center; gap: 5px; background: none; border: 1px dashed var(--border); color: var(--warm-mid); font-family: var(--sans); font-size: 11px; letter-spacing: 0.06em; padding: 5px 10px; border-radius: 3px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+    .add-link-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    .edit-actions { display: flex; flex-direction: column; gap: 10px; }
+    .btn-save { width: 100%; padding: 16px; background: var(--ink); color: var(--cream); border: none; border-radius: 4px; font-family: var(--sans); font-size: 13px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; }
+    .btn-save:hover { background: #2a2a2a; }
+    .btn-cancel { width: 100%; padding: 14px; background: none; color: var(--warm-mid); border: none; font-family: var(--sans); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: color 0.2s; }
+    .btn-cancel:hover { color: var(--ink); }
+    .edit-footer { margin-top: 16px; padding-bottom: 8px; font-size: 11px; color: var(--border); text-align: center; letter-spacing: 0.05em; }
+  </style>
 </head>
 <body>
 
-<div class="screen active" id="view">
+<div id="loading" class="loading-screen">
+  <span class="loading-text">Loading...</span>
+</div>
+
+<div id="sync-status" class="sync-status">Syncing...</div>
+
+<!-- LOGIN VIEW -->
+<div id="login" class="screen">
+  <h1 class="login-title">Morning Brief</h1>
+  <p class="login-subtitle">Sign in to sync across devices</p>
+  <div class="login-form">
+    <input type="text" id="username-input" class="login-input" placeholder="Enter a username" autocomplete="off" autocapitalize="off">
+    <button class="login-btn" onclick="handleLogin()">Continue</button>
+  </div>
+  <p class="login-note">Use the same username on all your devices to sync your priorities.</p>
+</div>
+
+<!-- MORNING VIEW -->
+<div id="view" class="screen">
   <div class="view-top">
-    <div class="greeting" id="greeting">Good morning</div>
-    <div class="today-date" id="date-display"></div>
+    <p id="greeting" class="greeting">Good morning</p>
+    <h1 id="date-display" class="today-date"></h1>
     <div class="divider"></div>
-    <div class="section-label">Today's Focus</div>
-    <ul class="priorities-list" id="priorities-list">
-      <li class="empty-state">No priorities set yet.<br>Tap edit to plan your day.</li>
+    <p class="section-label">Today&apos;s Focus</p>
+    <ul id="priorities-list" class="priorities-list">
+      <li class="empty-state">No priorities set yet. Tap edit to plan your day.</li>
     </ul>
   </div>
   <div class="view-bottom">
-    <div class="progress-row" id="progress-row" style="display:none;">
-      <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-fill"></div></div>
-      <div class="progress-count" id="progress-count"></div>
+    <div id="progress-row" class="progress-row" style="display:none;">
+      <div class="progress-bar-track"><div id="progress-fill" class="progress-bar-fill" style="width:0%"></div></div>
+      <span id="progress-count" class="progress-count">0 of 0</span>
     </div>
     <button class="btn-edit" onclick="showEdit()">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8.5 1.5L10.5 3.5L4 10H2V8L8.5 1.5Z" stroke="currentColor" stroke-width="1" fill="none"/></svg>
-      Edit tomorrow's list
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.5 1.5l2 2m-2-2L3 9l-1.5 3.5L5 11l7.5-7.5-2-2z"/></svg>
+      Edit tomorrow&apos;s list
     </button>
+    <button class="btn-logout" onclick="handleLogout()">Sign out</button>
     <div class="daily-quote"><p id="quote-text"></p></div>
   </div>
 </div>
 
-<div class="screen" id="edit">
+<!-- EDIT VIEW -->
+<div id="edit" class="screen">
   <div class="edit-header">
-    <div class="edit-eyebrow">Evening Planning</div>
-    <div class="edit-title">What matters<br><em style="font-style:italic;color:var(--gold);">tomorrow?</em></div>
-    <div class="edit-subtitle">Add tasks and paste links to emails, docs, or anything relevant.</div>
+    <p class="edit-eyebrow">Evening Planning</p>
+    <h1 class="edit-title">What matters tomorrow?</h1>
+    <p class="edit-subtitle">Add tasks and paste links to emails, docs, or anything relevant.</p>
   </div>
-  <div class="inputs-list" id="inputs-list"></div>
+  <div id="inputs-list" class="inputs-list"></div>
   <div class="edit-actions">
-    <button class="btn-save" onclick="savePriorities()">Save & Set</button>
+    <button class="btn-save" onclick="savePriorities()">Save &amp; Set</button>
     <button class="btn-cancel" onclick="showView()">Cancel</button>
   </div>
-  <div class="edit-footer">Tap a priority in morning view to mark it done</div>
+  <p class="edit-footer">Tap a priority in morning view to mark it done</p>
 </div>
 
 <script>
-const QUOTES = [
-  "The secret of getting ahead is getting started.",
-  "Focus on being productive instead of busy.",
-  "Do the hard thing first.",
-  "Clarity is the antidote to anxiety.",
-  "Energy flows where attention goes.",
-  "One thing at a time, done well.",
-  "Make today count.",
-  "Progress, not perfection.",
-  "Show up. Do the work. That's it.",
-  "Small steps, taken consistently, move mountains.",
-];
-const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  // Your Supabase credentials
+  const SUPABASE_URL = 'https://rxamfjypexnbngvaqrim.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4YW1manlwZXhuYm5ndmFxcmltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwOTA4NDksImV4cCI6MjA5MDY2Njg0OX0.iCGPX3VTjEruaX8Ey-zObGt3hnvVajol4N6TLQzmiss';
 
-function getGreeting() {
-  const h = new Date().getHours();
-  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-}
+  // Initialize Supabase client
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function loadPriorities() {
-  try {
-    const raw = JSON.parse(localStorage.getItem('morning_priorities_v2') || '[]');
-    return raw.map(p => typeof p === 'string' ? { text: p, links: [] } : p);
-  } catch { return []; }
-}
+  let currentUser = null;
+  let prioritiesCache = [];
+  let doneCache = [];
 
-function loadDone() {
-  const today = new Date().toDateString();
-  if (localStorage.getItem('morning_done_date') !== today) {
-    localStorage.setItem('morning_done_date', today);
-    localStorage.setItem('morning_done', '[]');
-    return [];
+  const QUOTES = [
+    "The secret of getting ahead is getting started.",
+    "Focus on being productive instead of busy.",
+    "Do the hard thing first.",
+    "Clarity is the antidote to anxiety.",
+    "Energy flows where attention goes.",
+    "One thing at a time, done well.",
+    "Make today count.",
+    "Progress, not perfection.",
+    "Show up. Do the work. That is it.",
+    "Small steps, taken consistently, move mountains.",
+  ];
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function getGreeting() {
+    const h = new Date().getHours();
+    return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
   }
-  try { return JSON.parse(localStorage.getItem('morning_done') || '[]'); } catch { return []; }
-}
 
-function saveDone(done) { localStorage.setItem('morning_done', JSON.stringify(done)); }
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function escAttr(s) { return String(s).replace(/"/g,'&quot;'); }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escAttr(s) { return String(s).replace(/"/g,'&quot;'); }
 
-function renderView() {
-  const d = new Date();
-  document.getElementById('greeting').textContent = getGreeting();
-  document.getElementById('date-display').innerHTML =
-    `${DAYS[d.getDay()]},<br><em>${MONTHS[d.getMonth()]} ${d.getDate()}</em>`;
+  function showSyncStatus(text) {
+    const el = document.getElementById('sync-status');
+    el.textContent = text;
+    el.classList.add('visible');
+    setTimeout(() => el.classList.remove('visible'), 1500);
+  }
 
-  const priorities = loadPriorities();
-  let done = loadDone();
-  const list = document.getElementById('priorities-list');
-  list.innerHTML = '';
-  const items = priorities.filter(p => p.text && p.text.trim());
+  // ===== DATABASE FUNCTIONS =====
 
-  if (!items.length) {
-    list.innerHTML = '<li class="empty-state">No priorities set yet.<br>Tap edit to plan your day.</li>';
-    document.getElementById('progress-row').style.display = 'none';
-  } else {
-    items.forEach((p, i) => {
-      const isDone = done.includes(i);
-      const li = document.createElement('li');
-      li.className = 'priority-item' + (isDone ? ' done' : '');
+  async function loadPrioritiesFromDB() {
+    if (!currentUser) return [];
+    try {
+      const { data, error } = await supabase
+        .from('priorities')
+        .select('*')
+        .eq('user_id', currentUser)
+        .order('priority_index');
+      
+      if (error) throw error;
+      
+      // Convert to array format
+      const priorities = [];
+      for (let i = 0; i < 5; i++) {
+        const item = data.find(d => d.priority_index === i);
+        priorities[i] = item ? { text: item.text || '', links: item.links || [] } : { text: '', links: [] };
+      }
+      return priorities;
+    } catch (err) {
+      console.error('Error loading priorities:', err);
+      return [];
+    }
+  }
 
-      const validLinks = (p.links || []).filter(l => l.url && l.url.trim());
-      const linksHtml = validLinks.length ? `<div class="priority-links">${
-        validLinks.map(l => `<a class="link-chip" href="${escAttr(l.url)}" target="_blank" rel="noopener">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M4 2H2a1 1 0 00-1 1v5a1 1 0 001 1h5a1 1 0 001-1V6M6.5 1h2.5m0 0v2.5m0-2.5L4.5 5.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          ${esc(l.label || 'Open link')}</a>`).join('')
-      }</div>` : '';
+  async function savePrioritiesToDB(priorities) {
+    if (!currentUser) return;
+    showSyncStatus('Syncing...');
+    try {
+      for (let i = 0; i < priorities.length; i++) {
+        const { error } = await supabase
+          .from('priorities')
+          .upsert({
+            user_id: currentUser,
+            priority_index: i,
+            text: priorities[i].text || '',
+            links: priorities[i].links || []
+          }, { onConflict: 'user_id,priority_index' });
+        
+        if (error) throw error;
+      }
+      showSyncStatus('Synced!');
+    } catch (err) {
+      console.error('Error saving priorities:', err);
+      showSyncStatus('Sync failed');
+    }
+  }
 
-      li.innerHTML = `
-        <div class="priority-main">
-          <div class="priority-num">${i + 1}</div>
-          <div class="priority-text">${esc(p.text)}</div>
-          <div class="check-icon">
-            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-              <path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-        </div>${linksHtml}`;
+  async function loadDoneFromDB() {
+    if (!currentUser) return [];
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      const { data, error } = await supabase
+        .from('done_items')
+        .select('done_indices')
+        .eq('user_id', currentUser)
+        .eq('done_date', today)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data?.done_indices || [];
+    } catch (err) {
+      console.error('Error loading done items:', err);
+      return [];
+    }
+  }
 
-      li.querySelector('.priority-main').addEventListener('click', () => {
-        const idx = done.indexOf(i);
-        if (idx > -1) done.splice(idx, 1); else done.push(i);
-        saveDone(done);
-        renderView();
+  async function saveDoneToDB(doneIndices) {
+    if (!currentUser) return;
+    const today = new Date().toISOString().split('T')[0];
+    showSyncStatus('Syncing...');
+    try {
+      const { error } = await supabase
+        .from('done_items')
+        .upsert({
+          user_id: currentUser,
+          done_date: today,
+          done_indices: doneIndices
+        }, { onConflict: 'user_id,done_date' });
+      
+      if (error) throw error;
+      showSyncStatus('Synced!');
+    } catch (err) {
+      console.error('Error saving done items:', err);
+      showSyncStatus('Sync failed');
+    }
+  }
+
+  // ===== VIEW RENDERING =====
+
+  async function renderView() {
+    const d = new Date();
+    document.getElementById('greeting').textContent = getGreeting();
+    document.getElementById('date-display').innerHTML =
+      '<span>' + DAYS[d.getDay()] + ', ' + MONTHS[d.getMonth()] + ' </span><em>' + d.getDate() + '</em>';
+
+    prioritiesCache = await loadPrioritiesFromDB();
+    doneCache = await loadDoneFromDB();
+    
+    const list = document.getElementById('priorities-list');
+    list.innerHTML = '';
+    const items = prioritiesCache.filter(p => p.text && p.text.trim());
+
+    if (!items.length) {
+      list.innerHTML = '<li class="empty-state">No priorities set yet. Tap edit to plan your day.</li>';
+      document.getElementById('progress-row').style.display = 'none';
+    } else {
+      const originalIndices = prioritiesCache.map((p, i) => p.text && p.text.trim() ? i : -1).filter(i => i !== -1);
+      
+      items.forEach((p, displayIdx) => {
+        const originalIdx = originalIndices[displayIdx];
+        const isDone = doneCache.includes(originalIdx);
+        const li = document.createElement('li');
+        li.className = 'priority-item' + (isDone ? ' done' : '');
+        li.dataset.originalIdx = originalIdx;
+
+        const validLinks = (p.links || []).filter(l => l.url && l.url.trim());
+        const linksHtml = validLinks.length ? '<div class="priority-links">' +
+          validLinks.map(l => '<a href="' + escAttr(l.url) + '" target="_blank" rel="noopener" class="link-chip" onclick="event.stopPropagation()">' +
+            '<svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4-4m0 0H5m3 0v3M8 6.5V8a1 1 0 01-1 1H2a1 1 0 01-1-1V3a1 1 0 011-1h1.5"/></svg>' +
+            esc(l.label || 'Open link') + '</a>').join('') +
+        '</div>' : '';
+
+        li.innerHTML = 
+          '<div class="priority-main">' +
+            '<span class="priority-num">' + (displayIdx + 1) + '</span>' +
+            '<span class="priority-text">' + esc(p.text) + '</span>' +
+            '<span class="check-icon">' +
+              '<svg width="10" height="10" fill="none" stroke="#0f0f0f" stroke-width="2"><path d="M2 5.5l2 2 4-4"/></svg>' +
+            '</span>' +
+          '</div>' +
+          linksHtml;
+
+        li.querySelector('.priority-main').addEventListener('click', async () => {
+          const idx = doneCache.indexOf(originalIdx);
+          if (idx > -1) doneCache.splice(idx, 1); else doneCache.push(originalIdx);
+          await saveDoneToDB(doneCache);
+          renderView();
+        });
+        list.appendChild(li);
       });
-      list.appendChild(li);
-    });
 
-    const doneCount = items.filter((_, i) => done.includes(i)).length;
-    document.getElementById('progress-row').style.display = 'flex';
-    document.getElementById('progress-fill').style.width = (items.length ? doneCount / items.length * 100 : 0) + '%';
-    document.getElementById('progress-count').textContent = `${doneCount} of ${items.length}`;
+      const doneCount = items.filter((_, i) => doneCache.includes(originalIndices[i])).length;
+      document.getElementById('progress-row').style.display = 'flex';
+      document.getElementById('progress-fill').style.width = (items.length ? doneCount / items.length * 100 : 0) + '%';
+      document.getElementById('progress-count').textContent = doneCount + ' of ' + items.length;
+    }
+
+    document.getElementById('quote-text').textContent = QUOTES[d.getDate() % QUOTES.length];
   }
 
-  document.getElementById('quote-text').textContent = QUOTES[d.getDate() % QUOTES.length];
-}
+  const placeholders = ['Your most important task...','Second priority...','Third...','Fourth...','Fifth...'];
 
-const placeholders = ['Your most important task…','Second priority…','Third…','Fourth…','Fifth…'];
-
-function renderEdit() {
-  const priorities = loadPriorities();
-  const container = document.getElementById('inputs-list');
-  container.innerHTML = '';
-  for (let i = 0; i < 5; i++) {
-    const p = priorities[i] || { text: '', links: [] };
-    const card = document.createElement('div');
-    card.className = 'edit-card';
-    card.innerHTML = `
-      <div class="edit-card-top">
-        <span class="input-num">${i + 1}</span>
-        <input class="priority-input" type="text" id="input-${i}"
-          placeholder="${placeholders[i]}" value="${escAttr(p.text || '')}" maxlength="120">
-        <button class="clear-input" onclick="document.getElementById('input-${i}').value='';document.getElementById('input-${i}').focus();" tabindex="-1">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2L10 10M10 2L2 10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-      <div class="edit-links">
-        <div class="edit-links-list" id="links-${i}"></div>
-        <button class="add-link-btn" onclick="addLink(${i})">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-          Add link
-        </button>
-      </div>`;
-    container.appendChild(card);
-    (p.links || []).forEach(l => addLinkRow(i, l.label, l.url));
+  async function renderEdit() {
+    prioritiesCache = await loadPrioritiesFromDB();
+    const container = document.getElementById('inputs-list');
+    container.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+      const p = prioritiesCache[i] || { text: '', links: [] };
+      const card = document.createElement('div');
+      card.className = 'edit-card';
+      card.innerHTML = 
+        '<div class="edit-card-top">' +
+          '<span class="input-num">' + (i + 1) + '</span>' +
+          '<input type="text" id="input-' + i + '" class="priority-input" value="' + escAttr(p.text) + '" placeholder="' + placeholders[i] + '">' +
+          '<button class="clear-input" onclick="document.getElementById(\'input-' + i + '\').value=\'\'" aria-label="Clear">' +
+            '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M5 5l4 4m0-4l-4 4"/></svg>' +
+          '</button>' +
+        '</div>' +
+        '<div class="edit-links">' +
+          '<div id="links-' + i + '" class="edit-links-list"></div>' +
+          '<button class="add-link-btn" onclick="addLink(' + i + ')">' +
+            '<svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 1v8M1 5h8"/></svg>' +
+            'Add link' +
+          '</button>' +
+        '</div>';
+      container.appendChild(card);
+      (p.links || []).forEach(l => addLinkRow(i, l.label, l.url));
+    }
+    setTimeout(() => document.getElementById('input-0').focus(), 100);
   }
-  setTimeout(() => document.getElementById('input-0').focus(), 100);
-}
 
-function addLinkRow(i, label='', url='') {
-  const list = document.getElementById(`links-${i}`);
-  const row = document.createElement('div');
-  row.className = 'link-row';
-  row.innerHTML = `
-    <input class="link-input-label" type="text" placeholder="Label" value="${escAttr(label)}" maxlength="50">
-    <input class="link-input-url" type="url" placeholder="Paste URL…" value="${escAttr(url)}">
-    <button class="remove-link" onclick="this.closest('.link-row').remove()" title="Remove">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2L10 10M10 2L2 10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-    </button>`;
-  list.appendChild(row);
-}
-
-function addLink(i) { addLinkRow(i); }
-
-function savePriorities() {
-  const data = [];
-  for (let i = 0; i < 5; i++) {
-    const text = (document.getElementById(`input-${i}`) || {}).value?.trim() || '';
-    const rows = document.querySelectorAll(`#links-${i} .link-row`);
-    const links = [];
-    rows.forEach(r => {
-      const url = r.querySelector('.link-input-url').value.trim();
-      const label = r.querySelector('.link-input-label').value.trim();
-      if (url) links.push({ label: label || 'Open link', url });
-    });
-    data.push({ text, links });
+  function addLinkRow(i, label, url) {
+    label = label || '';
+    url = url || '';
+    const list = document.getElementById('links-' + i);
+    const row = document.createElement('div');
+    row.className = 'link-row';
+    row.innerHTML = 
+      '<input type="text" class="link-input-label" placeholder="Label" value="' + escAttr(label) + '">' +
+      '<input type="url" class="link-input-url" placeholder="Paste URL" value="' + escAttr(url) + '">' +
+      '<button class="remove-link" onclick="this.parentElement.remove()" aria-label="Remove">' +
+        '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2l8 8m0-8l-8 8"/></svg>' +
+      '</button>';
+    list.appendChild(row);
   }
-  localStorage.setItem('morning_priorities_v2', JSON.stringify(data));
-  showView();
-}
 
-function showEdit() { renderEdit(); document.getElementById('view').classList.remove('active'); document.getElementById('edit').classList.add('active'); }
-function showView() { renderView(); document.getElementById('edit').classList.remove('active'); document.getElementById('view').classList.add('active'); }
+  function addLink(i) { addLinkRow(i); }
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.getElementById('edit').classList.contains('active')) {
-    const inputs = [...document.querySelectorAll('.priority-input')];
-    const idx = inputs.indexOf(document.activeElement);
-    if (idx >= 0 && idx < 4) inputs[idx + 1].focus();
-    else if (idx === 4) savePriorities();
+  async function savePriorities() {
+    const data = [];
+    for (let i = 0; i < 5; i++) {
+      const input = document.getElementById('input-' + i);
+      const text = input ? input.value.trim() : '';
+      const rows = document.querySelectorAll('#links-' + i + ' .link-row');
+      const links = [];
+      rows.forEach(r => {
+        const url = r.querySelector('.link-input-url').value.trim();
+        const label = r.querySelector('.link-input-label').value.trim();
+        if (url) links.push({ label: label || 'Open link', url: url });
+      });
+      data.push({ text: text, links: links });
+    }
+    await savePrioritiesToDB(data);
+    showView();
   }
-});
 
-renderView();
+  async function showEdit() {
+    await renderEdit();
+    document.getElementById('view').classList.remove('active');
+    document.getElementById('edit').classList.add('active');
+  }
+
+  async function showView() {
+    await renderView();
+    document.getElementById('edit').classList.remove('active');
+    document.getElementById('login').classList.remove('active');
+    document.getElementById('view').classList.add('active');
+  }
+
+  function showLogin() {
+    document.getElementById('view').classList.remove('active');
+    document.getElementById('edit').classList.remove('active');
+    document.getElementById('login').classList.add('active');
+  }
+
+  // ===== AUTH FUNCTIONS =====
+
+  function handleLogin() {
+    const username = document.getElementById('username-input').value.trim().toLowerCase();
+    if (!username) {
+      alert('Please enter a username');
+      return;
+    }
+    if (username.length < 3) {
+      alert('Username must be at least 3 characters');
+      return;
+    }
+    currentUser = username;
+    localStorage.setItem('morning_brief_user', username);
+    showView();
+  }
+
+  function handleLogout() {
+    currentUser = null;
+    localStorage.removeItem('morning_brief_user');
+    showLogin();
+  }
+
+  // ===== KEYBOARD HANDLING =====
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      if (document.getElementById('login').classList.contains('active')) {
+        handleLogin();
+      } else if (document.getElementById('edit').classList.contains('active')) {
+        const inputs = Array.from(document.querySelectorAll('.priority-input'));
+        const idx = inputs.indexOf(document.activeElement);
+        if (idx >= 0 && idx < 4) inputs[idx + 1].focus();
+        else if (idx === 4) savePriorities();
+      }
+    }
+  });
+
+  // ===== INITIALIZATION =====
+
+  async function init() {
+    const savedUser = localStorage.getItem('morning_brief_user');
+    document.getElementById('loading').classList.add('hidden');
+    
+    if (savedUser) {
+      currentUser = savedUser;
+      showView();
+    } else {
+      showLogin();
+    }
+  }
+
+  init();
 </script>
 </body>
 </html>
